@@ -8,6 +8,31 @@ pub mod mesh_fb;
 pub mod mesh_prost {
     include!(concat!(env!("OUT_DIR"), "/prost.mesh.rs"));
 }
+#[cfg(feature = "puroro")]
+use ::puroro_inline::puroro_inline2;
+#[cfg(feature = "puroro")]
+puroro_inline2! {
+    syntax = "proto3";
+
+    package mesh_puroro;
+
+    message Vector3 {
+        float x = 1;
+        float y = 2;
+        float z = 3;
+    }
+
+    message Triangle {
+        Vector3 v0 = 1;
+        Vector3 v1 = 2;
+        Vector3 v2 = 3;
+        Vector3 normal = 4;
+    }
+
+    message Mesh {
+        repeated Triangle triangles = 1;
+    }
+}
 
 #[cfg(feature = "flatbuffers")]
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
@@ -25,6 +50,8 @@ use crate::bench_capnp;
 use crate::bench_flatbuffers;
 #[cfg(feature = "prost")]
 use crate::bench_prost;
+#[cfg(feature = "puroro")]
+use crate::bench_puroro;
 use crate::Generate;
 
 #[derive(Clone, Copy)]
@@ -92,6 +119,20 @@ impl bench_prost::Serialize for Vector3 {
         result.x = self.x;
         result.y = self.y;
         result.z = self.z;
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Vector3 {
+    type Message = mesh_puroro::Vector3;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.x_mut() = self.x;
+        *result.y_mut() = self.y;
+        *result.z_mut() = self.z;
         result
     }
 }
@@ -188,6 +229,21 @@ impl bench_prost::Serialize for Triangle {
     }
 }
 
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Triangle {
+    type Message = mesh_puroro::Triangle;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.v0_mut() = self.v0.serialize_pb();
+        *result.v1_mut() = self.v1.serialize_pb();
+        *result.v2_mut() = self.v2.serialize_pb();
+        *result.normal_mut() = self.normal.serialize_pb();
+        result
+    }
+}
+
 #[cfg(feature = "alkahest")]
 impl alkahest::Pack<Triangle> for &'_ Triangle {
     #[inline]
@@ -280,6 +336,20 @@ impl bench_prost::Serialize for Mesh {
         let mut result = Self::Message::default();
         for triangle in self.triangles.iter() {
             result.triangles.push(triangle.serialize_pb());
+        }
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Mesh {
+    type Message = mesh_puroro::Mesh;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        for triangle in self.triangles.iter() {
+            result.triangles_mut().push(triangle.serialize_pb());
         }
         result
     }

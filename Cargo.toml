@@ -28,6 +28,8 @@ parity-scale-codec = { version = "3.4.0", features = ["full"], optional = true }
 parity-scale-codec-derive = { version = "3.1.4", optional = true }
 postcard = { version = "1.0.4", features = ["alloc"], optional = true }
 prost = { version = "0.11.8", optional = true }
+puroro = { path = "../puroro/puroro", optional = true }
+puroro-inline = { path = "../puroro/inline", optional = true }
 rand = "0.8.5"
 rkyv = { version = "0.7.40", features = ["validation"], optional = true }
 rmp-serde = { version = "1.1.1", optional = true }
@@ -42,34 +44,36 @@ zstd = "0.12.3+zstd.1.5.2"
 
 [features]
 default = [
-  "abomonation",
-  "abomonation_derive",
-  "alkahest",
-  # "bebop",
-  "bincode",
-  "borsh",
-  "bson",
-  "bytecheck",
-  "bytemuck",
-  "capnp",
-  "dlhn",
-  "flatbuffers",
-  "nachricht-serde",
-  "scale",
-  "postcard",
+#  "abomonation",
+#  "abomonation_derive",
+#  "alkahest",
+#  # "bebop",
+#  "bincode",
+#  "borsh",
+#  "bson",
+#  "bytecheck",
+#  "bytemuck",
+#  "capnp",
+#  "dlhn",
+#  "flatbuffers",
+#  "nachricht-serde",
+#  "scale",
+#  "postcard",
   "prost",
-  "rkyv",
-  "rmp-serde",
-  "ron",
+  "puroro",
+#  "rkyv",
+#  "rmp-serde",
+#  "ron",
   "serde",
-  "serde_bare",
-  "serde_cbor",
+#  "serde_bare",
+#  "serde_cbor",
   "serde_json",
-  "simd-json",
-  "speedy",
+#  "simd-json",
+#  "speedy",
 ]
 
 scale = ["parity-scale-codec", "parity-scale-codec-derive"]
+puroro = ["dep:puroro", "dep:puroro-inline"]
 
 [dev-dependencies]
 rand_pcg = "0.3.1"
@@ -88,4 +92,4 @@ name = "bench"
 [profile.bench]
 lto = true
 # Uncomment this to profile
-# debug = true
+debug = true

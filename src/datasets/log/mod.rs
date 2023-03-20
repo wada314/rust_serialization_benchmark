@@ -10,6 +10,35 @@ pub mod log_fb;
 pub mod log_prost {
     include!(concat!(env!("OUT_DIR"), "/prost.log.rs"));
 }
+#[cfg(feature = "puroro")]
+use ::puroro_inline::puroro_inline2;
+#[cfg(feature = "puroro")]
+puroro_inline2! {
+    syntax = "proto3";
+
+    package log_puroro;
+
+    message Address {
+        uint32 x0 = 1;
+        uint32 x1 = 2;
+        uint32 x2 = 3;
+        uint32 x3 = 4;
+    }
+
+    message Log {
+        Address address = 1;
+        string identity = 2;
+        string userid = 3;
+        string date = 4;
+        string request = 5;
+        uint32 code = 6;
+        uint64 size = 7;
+    }
+
+    message Logs {
+        repeated Log logs = 1;
+    }
+}
 
 #[cfg(feature = "flatbuffers")]
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
@@ -27,6 +56,8 @@ use crate::bench_capnp;
 use crate::bench_flatbuffers;
 #[cfg(feature = "prost")]
 use crate::bench_prost;
+#[cfg(feature = "puroro")]
+use crate::bench_puroro;
 use crate::Generate;
 
 #[derive(Clone, Copy)]
@@ -98,6 +129,21 @@ impl bench_prost::Serialize for Address {
         result.x1 = self.x1 as u32;
         result.x2 = self.x2 as u32;
         result.x3 = self.x3 as u32;
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Address {
+    type Message = log_puroro::Address;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.x0_mut() = self.x0 as u32;
+        *result.x1_mut() = self.x1 as u32;
+        *result.x2_mut() = self.x2 as u32;
+        *result.x3_mut() = self.x3 as u32;
         result
     }
 }
@@ -295,6 +341,23 @@ impl bench_prost::Serialize for Log {
     }
 }
 
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Log {
+    type Message = log_puroro::Log;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.identity_mut() = self.identity.clone();
+        *result.userid_mut() = self.userid.clone();
+        *result.date_mut() = self.date.clone();
+        *result.request_mut() = self.request.clone();
+        *result.code_mut() = self.code as u32;
+        *result.size_mut() = self.size;
+        result
+    }
+}
+
 #[cfg(feature = "alkahest")]
 impl alkahest::Pack<LogSchema> for &'_ Log {
     #[inline]
@@ -388,6 +451,20 @@ impl bench_prost::Serialize for Logs {
         let mut result = Self::Message::default();
         for log in self.logs.iter() {
             result.logs.push(log.serialize_pb());
+        }
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Logs {
+    type Message = log_puroro::Logs;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        for log in self.logs.iter() {
+            result.logs_mut().push(log.serialize_pb());
         }
         result
     }

@@ -24,6 +24,8 @@ pub mod bench_nachricht;
 pub mod bench_postcard;
 #[cfg(feature = "prost")]
 pub mod bench_prost;
+#[cfg(feature = "puroro")]
+pub mod bench_puroro;
 #[cfg(feature = "rkyv")]
 pub mod bench_rkyv;
 #[cfg(feature = "rlp")]

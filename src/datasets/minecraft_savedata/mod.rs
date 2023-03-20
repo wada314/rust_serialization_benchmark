@@ -8,6 +8,127 @@ pub mod minecraft_savedata_fb;
 pub mod minecraft_savedata_prost {
     include!(concat!(env!("OUT_DIR"), "/prost.minecraft_savedata.rs"));
 }
+#[cfg(feature = "puroro")]
+use ::puroro_inline::puroro_inline2;
+#[cfg(feature = "puroro")]
+puroro_inline2! {
+    syntax = "proto3";
+
+    package minecraft_savedata_puroro;
+
+    enum GameType {
+        SURVIVAL = 0;
+        CREATIVE = 1;
+        ADVENTURE = 2;
+        SPECTATOR = 3;
+    }
+
+    message Item {
+        int32 count = 1;
+        uint32 slot = 2;
+        string id = 3;
+    }
+
+    message Abilities {
+        float walk_speed = 1;
+        float fly_speed = 2;
+        bool may_fly = 3;
+        bool flying = 4;
+        bool invulnerable = 5;
+        bool may_build = 6;
+        bool instabuild = 7;
+    }
+
+    message Vector3d {
+        double x = 1;
+        double y = 2;
+        double z = 3;
+    }
+
+    message Vector2f {
+        float x = 1;
+        float y = 2;
+    }
+
+    message Uuid {
+        uint32 x0 = 1;
+        uint32 x1 = 2;
+        uint32 x2 = 3;
+        uint32 x3 = 4;
+    }
+
+    message Entity {
+        string id = 1;
+        Vector3d pos = 2;
+        Vector3d motion = 3;
+        Vector2f rotation = 4;
+        float fall_distance = 5;
+        uint32 fire = 6;
+        uint32 air = 7;
+        bool on_ground = 8;
+        bool no_gravity = 9;
+        bool invulnerable = 10;
+        int32 portal_cooldown = 11;
+        Uuid uuid = 12;
+        optional string custom_name = 13;
+        bool custom_name_visible = 14;
+        bool silent = 15;
+        bool glowing = 16;
+    }
+
+    message RecipeBook {
+        repeated string recipes = 1;
+        repeated string to_be_displayed = 2;
+        bool is_filtering_craftable = 3;
+        bool is_gui_open = 4;
+        bool is_furnace_filtering_craftable = 5;
+        bool is_furnace_gui_open = 6;
+        bool is_blasting_furnace_filtering_craftable = 7;
+        bool is_blasting_furnace_gui_open = 8;
+        bool is_smoker_filtering_craftable = 9;
+        bool is_smoker_gui_open = 10;
+    }
+
+    message Vehicle {
+        Uuid uuid = 1;
+        Entity entity = 2;
+    }
+
+    message Player {
+        GameType game_type = 1;
+        GameType previous_game_type = 2;
+        int64 score = 3;
+        string dimension = 4;
+        uint32 selected_item_slot = 5;
+        Item selected_item = 6;
+        optional string spawn_dimension = 7;
+        int64 spawn_x = 8;
+        int64 spawn_y = 9;
+        int64 spawn_z = 10;
+        optional bool spawn_forced = 11;
+        uint32 sleep_timer = 12;
+        float food_exhaustion_level = 13;
+        float food_saturation_level = 14;
+        uint32 food_tick_timer = 15;
+        uint32 xp_level = 16;
+        float xp_p = 17;
+        int32 xp_total = 18;
+        int32 xp_seed = 19;
+        repeated Item inventory = 20;
+        repeated Item ender_items = 21;
+        Abilities abilities = 22;
+        optional Vector3d entered_nether_position = 23;
+        optional Vehicle root_vehicle = 24;
+        optional Entity shoulder_entity_left = 25;
+        optional Entity shoulder_entity_right = 26;
+        bool seen_credits = 27;
+        RecipeBook recipe_book = 28;
+    }
+
+    message Players {
+        repeated Player players = 1;
+    }
+}
 
 #[cfg(feature = "flatbuffers")]
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
@@ -17,6 +138,8 @@ pub use minecraft_savedata_capnp as cp;
 pub use minecraft_savedata_fb::minecraft_savedata as fb;
 #[cfg(feature = "prost")]
 use minecraft_savedata_prost as pb;
+#[cfg(feature = "puroro")]
+use minecraft_savedata_puroro as prb;
 use rand::Rng;
 #[cfg(feature = "rkyv")]
 use rkyv::Archived;
@@ -27,6 +150,8 @@ use crate::bench_capnp;
 use crate::bench_flatbuffers;
 #[cfg(feature = "prost")]
 use crate::bench_prost;
+#[cfg(feature = "puroro")]
+use crate::bench_puroro;
 use crate::{generate_vec, Generate};
 
 #[derive(Clone, Copy)]
@@ -102,6 +227,19 @@ impl Into<pb::GameType> for GameType {
             GameType::Creative => pb::GameType::Creative,
             GameType::Adventure => pb::GameType::Adventure,
             GameType::Spectator => pb::GameType::Spectator,
+        }
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl Into<prb::GameType> for GameType {
+    #[inline]
+    fn into(self) -> prb::GameType {
+        match self {
+            GameType::Survival => prb::GameType::Survival,
+            GameType::Creative => prb::GameType::Creative,
+            GameType::Adventure => prb::GameType::Adventure,
+            GameType::Spectator => prb::GameType::Spectator,
         }
     }
 }
@@ -204,6 +342,20 @@ impl bench_prost::Serialize for Item {
         result.count = self.count as i32;
         result.slot = self.slot as u32;
         result.id = self.id.clone();
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Item {
+    type Message = prb::Item;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.count_mut() = self.count as i32;
+        *result.slot_mut() = self.slot as u32;
+        *result.id_mut() = self.id.clone();
         result
     }
 }
@@ -318,6 +470,24 @@ impl bench_prost::Serialize for Abilities {
         result.invulnerable = self.invulnerable;
         result.may_build = self.may_build;
         result.instabuild = self.instabuild;
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Abilities {
+    type Message = prb::Abilities;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.walk_speed_mut() = self.walk_speed;
+        *result.fly_speed_mut() = self.fly_speed;
+        *result.may_fly_mut() = self.may_fly;
+        *result.flying_mut() = self.flying;
+        *result.invulnerable_mut() = self.invulnerable;
+        *result.may_build_mut() = self.may_build;
+        *result.instabuild_mut() = self.instabuild;
         result
     }
 }
@@ -542,6 +712,59 @@ impl bench_prost::Serialize for Entity {
     }
 }
 
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Entity {
+    type Message = prb::Entity;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.id_mut() = self.id.clone();
+        *result.pos_mut() = {
+            let mut result = prb::Vector3d::default();
+            *result.x_mut() = self.pos.0;
+            *result.y_mut() = self.pos.1;
+            *result.z_mut() = self.pos.2;
+            result
+        };
+        *result.motion_mut() = {
+            let mut result = prb::Vector3d::default();
+            *result.x_mut() = self.motion.0;
+            *result.y_mut() = self.motion.1;
+            *result.z_mut() = self.motion.2;
+            result
+        };
+        *result.rotation_mut() = {
+            let mut result = prb::Vector2f::default();
+            *result.x_mut() = self.rotation.0;
+            *result.y_mut() = self.rotation.1;
+            result
+        };
+        *result.fall_distance_mut() = self.fall_distance;
+        *result.fire_mut() = self.fire as u32;
+        *result.air_mut() = self.air as u32;
+        *result.on_ground_mut() = self.on_ground;
+        *result.no_gravity_mut() = self.no_gravity;
+        *result.invulnerable_mut() = self.invulnerable;
+        *result.portal_cooldown_mut() = self.portal_cooldown;
+        *result.uuid_mut() = {
+            let mut result = prb::Uuid::default();
+            *result.x0_mut() = self.uuid[0];
+            *result.x1_mut() = self.uuid[1];
+            *result.x2_mut() = self.uuid[2];
+            *result.x3_mut() = self.uuid[3];
+            result
+        };
+        if let Some(ref custom_name) = self.custom_name {
+            *result.custom_name_mut() = custom_name.clone();
+        }
+        *result.custom_name_visible_mut() = self.custom_name_visible;
+        *result.silent_mut() = self.silent;
+        *result.glowing_mut() = self.glowing;
+        result
+    }
+}
+
 #[cfg(feature = "alkahest")]
 #[derive(alkahest::Schema)]
 pub struct EntitySchema {
@@ -744,6 +967,32 @@ impl bench_prost::Serialize for RecipeBook {
         result.is_blasting_furnace_gui_open = self.is_blasting_furnace_gui_open;
         result.is_smoker_filtering_craftable = self.is_smoker_filtering_craftable;
         result.is_smoker_gui_open = self.is_smoker_gui_open;
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for RecipeBook {
+    type Message = prb::RecipeBook;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        for recipe in self.recipes.iter() {
+            result.recipes_mut().push(recipe.clone());
+        }
+        for tbd in self.to_be_displayed.iter() {
+            result.to_be_displayed_mut().push(tbd.clone());
+        }
+        *result.is_filtering_craftable_mut() = self.is_filtering_craftable;
+        *result.is_gui_open_mut() = self.is_gui_open;
+        *result.is_furnace_filtering_craftable_mut() = self.is_furnace_filtering_craftable;
+        *result.is_furnace_gui_open_mut() = self.is_furnace_gui_open;
+        *result.is_blasting_furnace_filtering_craftable_mut() =
+            self.is_blasting_furnace_filtering_craftable;
+        *result.is_blasting_furnace_gui_open_mut() = self.is_blasting_furnace_gui_open;
+        *result.is_smoker_filtering_craftable_mut() = self.is_smoker_filtering_craftable;
+        *result.is_smoker_gui_open_mut() = self.is_smoker_gui_open;
         result
     }
 }
@@ -1141,6 +1390,73 @@ impl bench_prost::Serialize for Player {
     }
 }
 
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Player {
+    type Message = prb::Player;
+
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        *result.game_type_mut() = self.game_type.into();
+        *result.previous_game_type_mut() = self.previous_game_type.into();
+        *result.score_mut() = self.score;
+        *result.dimension_mut() = self.dimension.clone();
+        *result.selected_item_slot_mut() = self.selected_item_slot;
+        *result.selected_item_mut() = self.selected_item.serialize_pb();
+        if let Some(spawn_dimension) = self.spawn_dimension.clone() {
+            *result.spawn_dimension_mut() = spawn_dimension;
+        }
+        *result.spawn_x_mut() = self.spawn_x;
+        *result.spawn_y_mut() = self.spawn_y;
+        *result.spawn_z_mut() = self.spawn_z;
+        if let Some(spawn_forced) = self.spawn_forced {
+            *result.spawn_forced_mut() = spawn_forced;
+        }
+        *result.sleep_timer_mut() = self.sleep_timer as u32;
+        *result.food_exhaustion_level_mut() = self.food_exhaustion_level;
+        *result.food_saturation_level_mut() = self.food_saturation_level;
+        *result.food_tick_timer_mut() = self.food_tick_timer;
+        *result.xp_level_mut() = self.xp_level as u32;
+        *result.xp_p_mut() = self.xp_p;
+        *result.xp_total_mut() = self.xp_total;
+        *result.xp_seed_mut() = self.xp_seed;
+        for item in self.inventory.iter() {
+            result.inventory_mut().push(item.serialize_pb());
+        }
+        for item in self.ender_items.iter() {
+            result.ender_items_mut().push(item.serialize_pb());
+        }
+        *result.abilities_mut() = self.abilities.serialize_pb();
+        if let Some(p) = self.entered_nether_position {
+            let mut v3d = prb::Vector3d::default();
+            *v3d.x_mut() = p.0;
+            *v3d.y_mut() = p.1;
+            *v3d.z_mut() = p.2;
+            *result.entered_nether_position_mut() = v3d;
+        }
+        if let Some(v) = self.root_vehicle.as_ref() {
+            let mut vehicle = prb::Vehicle::default();
+            *vehicle.uuid_mut() = {
+                let mut uuid = prb::Uuid::default();
+                *uuid.x0_mut() = v.0[0];
+                *uuid.x1_mut() = v.0[1];
+                *uuid.x2_mut() = v.0[2];
+                *uuid.x3_mut() = v.0[3];
+                uuid
+            };
+            *vehicle.entity_mut() = v.1.serialize_pb();
+        }
+        if let Some(e) = self.shoulder_entity_left.as_ref() {
+            *result.shoulder_entity_left_mut() = e.serialize_pb();
+        }
+        if let Some(e) = self.shoulder_entity_right.as_ref() {
+            *result.shoulder_entity_right_mut() = e.serialize_pb();
+        }
+        *result.seen_credits_mut() = self.seen_credits;
+        *result.recipe_book_mut() = self.recipe_book.serialize_pb();
+        result
+    }
+}
+
 #[cfg(feature = "alkahest")]
 #[derive(alkahest::Schema)]
 pub struct PlayerSchema {
@@ -1294,6 +1610,20 @@ impl bench_prost::Serialize for Players {
         let mut result = Self::Message::default();
         for player in self.players.iter() {
             result.players.push(player.serialize_pb());
+        }
+        result
+    }
+}
+
+#[cfg(feature = "puroro")]
+impl bench_puroro::Serialize for Players {
+    type Message = prb::Players;
+
+    #[inline]
+    fn serialize_pb(&self) -> Self::Message {
+        let mut result = Self::Message::default();
+        for player in self.players.iter() {
+            result.players_mut().push(player.serialize_pb());
         }
         result
     }
