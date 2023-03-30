@@ -348,10 +348,10 @@ impl bench_puroro::Serialize for Log {
     #[inline]
     fn serialize_pb(&self) -> Self::Message {
         let mut result = Self::Message::default();
-        *result.identity_mut() = self.identity.clone();
-        *result.userid_mut() = self.userid.clone();
-        *result.date_mut() = self.date.clone();
-        *result.request_mut() = self.request.clone();
+        *result.identity_mut() = self.identity.as_str().into();
+        *result.userid_mut() = self.userid.as_str().into();
+        *result.date_mut() = self.date.as_str().into();
+        *result.request_mut() = self.request.as_str().into();
         *result.code_mut() = self.code as u32;
         *result.size_mut() = self.size;
         result

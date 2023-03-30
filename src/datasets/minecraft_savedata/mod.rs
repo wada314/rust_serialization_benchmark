@@ -355,7 +355,7 @@ impl bench_puroro::Serialize for Item {
         let mut result = Self::Message::default();
         *result.count_mut() = self.count as i32;
         *result.slot_mut() = self.slot as u32;
-        *result.id_mut() = self.id.clone();
+        *result.id_mut() = self.id.as_str().into();
         result
     }
 }
@@ -719,7 +719,7 @@ impl bench_puroro::Serialize for Entity {
     #[inline]
     fn serialize_pb(&self) -> Self::Message {
         let mut result = Self::Message::default();
-        *result.id_mut() = self.id.clone();
+        *result.id_mut() = self.id.as_str().into();
         *result.pos_mut() = {
             let mut result = prb::Vector3d::default();
             *result.x_mut() = self.pos.0;
@@ -756,7 +756,7 @@ impl bench_puroro::Serialize for Entity {
             result
         };
         if let Some(ref custom_name) = self.custom_name {
-            *result.custom_name_mut() = custom_name.clone();
+            *result.custom_name_mut() = custom_name.into();
         }
         *result.custom_name_visible_mut() = self.custom_name_visible;
         *result.silent_mut() = self.silent;
@@ -979,10 +979,10 @@ impl bench_puroro::Serialize for RecipeBook {
     fn serialize_pb(&self) -> Self::Message {
         let mut result = Self::Message::default();
         for recipe in self.recipes.iter() {
-            result.recipes_mut().push(recipe.clone());
+            result.recipes_mut().push(recipe.into());
         }
         for tbd in self.to_be_displayed.iter() {
-            result.to_be_displayed_mut().push(tbd.clone());
+            result.to_be_displayed_mut().push(tbd.into());
         }
         *result.is_filtering_craftable_mut() = self.is_filtering_craftable;
         *result.is_gui_open_mut() = self.is_gui_open;
@@ -1399,11 +1399,11 @@ impl bench_puroro::Serialize for Player {
         *result.game_type_mut() = self.game_type.into();
         *result.previous_game_type_mut() = self.previous_game_type.into();
         *result.score_mut() = self.score;
-        *result.dimension_mut() = self.dimension.clone();
+        *result.dimension_mut() = self.dimension.as_str().into();
         *result.selected_item_slot_mut() = self.selected_item_slot;
         *result.selected_item_mut() = self.selected_item.serialize_pb();
-        if let Some(spawn_dimension) = self.spawn_dimension.clone() {
-            *result.spawn_dimension_mut() = spawn_dimension;
+        if let Some(spawn_dimension) = self.spawn_dimension.as_deref() {
+            *result.spawn_dimension_mut() = spawn_dimension.into();
         }
         *result.spawn_x_mut() = self.spawn_x;
         *result.spawn_y_mut() = self.spawn_y;
